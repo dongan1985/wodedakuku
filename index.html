@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<!-- saved from url=(0026)https://hxfcsda.pages.dev/ -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初中化学方程式分步答题</title>
+    <style>
+        *{box-sizing:border-box;font-family:system-ui,sans-serif;}
+        body{max-width:900px;margin:20px auto;padding:0 16px;position:relative;}
+        .watermark{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;color:#ffffff;user-select:text;z-index:-1;}
+        .container{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 10px #0002;}
+        .menu{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+        button{padding:10px 16px;border:none;border-radius:8px;background:#2563eb;color:white;font-size:1rem;cursor:pointer;}
+        button.secondary{background:#6b7280;}
+        button.danger{background:#dc2626;}
+        button.reset-btn{background:#f59e0b;display:none;}
+        button.judge-btn{background:#059669;}
+        button.advance-plus-btn{background:#7c3aed;}
+        button:disabled{background:#aaa;cursor:not-allowed;}
+        .input-name{padding:10px;width:300px;font-size:1rem;margin-bottom:16px;border:1px solid #ccc;border-radius:6px;}
+        .step-box{border:1px solid #ddd;padding:16px;border-radius:10px;margin:16px 0;}
+        .option-group{margin:10px 0;display:flex;gap:10px;flex-wrap:wrap;}
+        .option{border:1px solid #2563eb;padding:8px 12px;border-radius:6px;cursor:pointer;}
+        .option.correct{background:#dcfce7;color:#065f46;}
+        .option.wrong{background:#fee2e2;color:#991b1b;}
+        .formula-item{display:inline-block;border:1px solid #aaa;padding:6px 10px;margin:4px;border-radius:6px;cursor:pointer;}
+        .formula-item.disabled{background:#cccccc;pointer-events:none;opacity:0.6;}
+        .score-info{font-size:18px;font-weight:bold;margin:12px 0;}
+        .eq-container{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 8px;}
+        .eq-cond{font-size:14px;margin-bottom:2px;min-height:18px;white-space:nowrap;}
+        .eq-equal{display:block;width:60px;height:2px;background:#333;}
+        .eq-equal2{display:block;width:60px;height:2px;background:#333;margin-top:4px;}
+        .prod-arrow{margin-left:4px;color:#c00;font-weight:bold;}
+        table{width:100%;border-collapse:collapse;margin:12px 0;}
+        th,td{border:1px solid #ccc;padding:8px;text-align:center;}
+        .hidden{display:none;}
+        table{margin-bottom:24px;}
+    </style>
+</head>
+<body>
+    <div class="watermark" style="color:#bbbbbb;opacity:0.2;font-size:24px;line‑height:2.2;">澄董 澄董 澄董 澄董 澄董<br>澄董 澄董 澄董 澄董 澄董</div>
+    <div class="container">
+        <h1>初中化学方程式分步答题</h1>
+        <div id="homePage" class="">
+            <div>
+                <input class="input-name" id="stuName" placeholder="请输入考生姓名">
+            </div>
+            <div class="menu">
+                <button onclick="startPractice()">模拟练习</button>
+                <button onclick="startExam()">正式考试（10题，满分100）</button>
+                <button class="judge-btn" onclick="startAdvance()">晋级模式（10题，干扰项6个）</button>
+                <button id="btnAdvancePlus" class="advance-plus-btn hidden" onclick="startAdvancePlus()">晋级冲分模式（全部题库）</button>
+                <button onclick="openPage('errorPage')">错题集</button>
+                <button onclick="openPage('rankPage')">排行榜</button>
+            </div>
+            <div>
+                <p>第1步：依次添加反应物、生成物、反应条件。全部选完后，点【已完成，进入第二步】校验。</p>
+                <p>校验通过后解锁第二步；点击各个化学式添加系数或箭头。</p>
+                <p>第2步：点击化学式，选择系数；生成物额外选择沉淀↓、气体↑或无箭头。系数默认为1，默认不显示，手动选1才会展示。常温条件不写在等号上方。</p>
+                <p>完成后点提交，系统自动判分。正式/晋级模式均为10题，每题10分，满分100。<br><strong>晋级模式：反应物、生成物选项共6个；金属单质使用同类金属作为干扰；部分物质强制配对同类变体干扰，独立榜单。晋级模式拿到100分解锁晋级冲分模式。</strong></p>
+            </div>
+        </div>
+        <div id="quizPage" class="hidden">
+            <div class="score-info">题号：<span id="qIndex">10</span>｜得分：<span id="score">0</span>
+                <button class="danger" onclick="backToHome()">退出练习/考试</button>
+            </div>
+            <div><strong>题目：</strong><span id="qTitle">碳酸钠与盐酸反应</span></div>
+            <div class="step-box">
+                <h4>第一步：选出反应物、生成物、反应条件</h4>
+                <div>
+                    <button id="btnReact" onclick="showOpt('react')">添加反应物</button>
+                    <button id="btnProd" onclick="showOpt('prod')">添加生成物</button>
+                    <button id="btnCond" onclick="showOpt('cond')">添加反应条件</button>
+                    <button onclick="checkStep1()" class="secondary">已完成，进入第二步</button>
+                    <button id="resetBtn" class="reset-btn" onclick="resetThisQuestion()" style="display: none;">重答本题</button>
+                </div>
+                <div id="optPanel" class="option-group"></div>
+                <div>当前选择：<span id="selStep1"></span></div>
+                <div id="step1Tip" style="color:red; margin-top:8px;"></div>
+            </div>
+            <div class="step-box">
+                <h4>第二步：点击各个化学式添加系数或箭头</h4>
+                <p>提示文字：点击各个化学式添加系数或箭头</p>
+                <div id="formulaView"></div>
+                <div id="arrowPanel" class="option-group"></div>
+            </div>
+            <button onclick="submitAnswer()">提交本题</button>
+            <div id="resultTip">❌答案错误，已加入错题本</div>
+        </div>
+        <div id="errorPage" class="hidden">
+            <h3>错题集</h3>
+            <div id="errorList"></div>
+            <button onclick="backToHome()">返回</button>
+            <button onclick="clearError()">清空错题</button>
+        </div>
+        <div id="rankPage" class="hidden">
+            <h3>排行榜</h3>
+            <h4>📘正式考试榜单</h4>
+            <table>
+                <thead><tr><th>姓名</th><th>分数</th><th>用时(秒)</th></tr></thead>
+                <tbody id="rankExamBody"></tbody>
+            </table>
+            <h4>🟢晋级模式榜单</h4>
+            <table>
+                <thead><tr><th>姓名</th><th>分数</th><th>用时(秒)</th></tr></thead>
+                <tbody id="rankAdvBody"></tbody>
+            </table>
+            <button onclick="backToHome()">返回</button>
+        </div>
+    </div>
+<script>
+// ==========Cloudflare Worker 接口地址==========
+// 👉这里替换为你的Worker地址，例：const WORKER_URL = "https://xxx.xxx.workers.dev";
+const WORKER_URL = "/api/rank";
+
+// 提交成绩到云端D1数据库
+async function submitRemoteScore(modeType,name,score,useSec){
+    try{
+        const res = await fetch(WORKER_URL,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({mode:modeType,name:name,score:score,time:useSec})
+        })
+        const ret = await res.json();
+        if(ret.ok){
+            alert("✅成绩已提交全局排行榜");
+        }else{
+            alert("⚠️提交成功，但后端返回异常:"+(ret.msg||""));
+        }
+    }catch(err){
+        alert("⚠️网络异常，成绩未能上传云端");
+        console.error(err);
+    }
+}
+// 从云端D1读取排行榜
+async function loadRemoteRank(){
+    try{
+        const res = await fetch(WORKER_URL);
+        const allList = await res.json();
+        let examList = allList.filter(i=>i.mode==="exam");
+        let advList = allList.filter(i=>i.mode==="advance");
+        //排序：分数降序，用时升序
+        examList.sort((a,b)=>b.score - a.score || a.time - b.time);
+        advList.sort((a,b)=>b.score - a.score || a.time - b.time);
+        let htmlExam="";
+        examList.forEach(r=>htmlExam +=`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.time}</td></tr>`);
+        document.getElementById("rankExamBody").innerHTML=htmlExam||"<tr><td colspan='3'>暂无记录</td></tr>";
+        let htmlAdv="";
+        advList.forEach(r=>htmlAdv +=`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.time}</td></tr>`);
+        document.getElementById("rankAdvBody").innerHTML=htmlAdv||"<tr><td colspan='3'>暂无记录</td></tr>";
+    }catch(err){
+        alert("读取排行榜失败！");
+        console.error(err);
+    }
+}
+const questionBank = [
+    {title:"铁丝在氧气中燃烧",react:["Fe","O₂"],prod:["Fe₃O₄"],cond:"点燃",coeff:[3,2,1],arrows:[""]},
+    {title:"实验室用高锰酸钾制氧气",react:["KMnO₄"],prod:["K₂MnO₄","MnO₂","O₂"],cond:"△",coeff:[2,1,1,1],arrows:["","","↑"]},
+    {title:"过氧化氢分解制取氧气",react:["H₂O₂"],prod:["H₂O","O₂"],cond:"MnO₂作催化剂",coeff:[2,2,1],arrows:["","↑"]},
+    {title:"碳充分燃烧",react:["C","O₂"],prod:["CO₂"],cond:"点燃",coeff:[1,1,1],arrows:[""]},
+    {title:"二氧化碳通入澄清石灰水",react:["CO₂","Ca(OH)₂"],prod:["CaCO₃","H₂O"],cond:"常温",coeff:[1,1,1,1],arrows:["↓",""]},
+    {title:"锌和稀硫酸反应制取氢气",react:["Zn","H₂SO₄"],prod:["ZnSO₄","H₂"],cond:"常温",coeff:[1,1,1,1],arrows:["","↑"]},
+    {title:"稀盐酸除铁锈（氧化铁和盐酸）",react:["Fe₂O₃","HCl"],prod:["FeCl₃","H₂O"],cond:"常温",coeff:[1,6,2,3],arrows:["",""]},
+    {title:"碳酸钠与盐酸反应",react:["Na₂CO₃","HCl"],prod:["NaCl","H₂O","CO₂"],cond:"常温",coeff:[1,2,2,1,1],arrows:["","","↑"]},
+    {title:"氢氧化钠和盐酸中和反应",react:["NaOH","HCl"],prod:["NaCl","H₂O"],cond:"常温",coeff:[1,1,1,1],arrows:["",""]},
+    {title:"氧化钙加水生成氢氧化钙",react:["CaO","H₂O"],prod:["Ca(OH)₂"],cond:"常温",coeff:[1,1,1],arrows:[""]},
+    {title:"碳酸钙高温分解",react:["CaCO₃"],prod:["CaO","CO₂"],cond:"高温",coeff:[1,1,1],arrows:["","↑"]},
+    {title:"稀硫酸除铁锈（氧化铁与稀硫酸）",react:["Fe₂O₃","H₂SO₄"],prod:["Fe₂(SO₄)₃","H₂O"],cond:"常温",coeff:[1,3,1,3],arrows:["",""]},
+    {title:"纯碱与稀硫酸反应",react:["Na₂CO₃","H₂SO₄"],prod:["Na₂SO₄","H₂O","CO₂"],cond:"常温",coeff:[1,1,1,1,1],arrows:["","","↑"]},
+    {title:"烧碱与硫酸铜反应",react:["NaOH","CuSO₄"],prod:["Cu(OH)₂","Na₂SO₄"],cond:"常温",coeff:[2,1,1,1],arrows:["↓",""]},
+    {title:"石灰水与硫酸铜反应",react:["Ca(OH)₂","CuSO₄"],prod:["Cu(OH)₂","CaSO₄"],cond:"常温",coeff:[1,1,1,1],arrows:["↓",""]},
+    {title:"烧碱与氯化铁反应",react:["NaOH","FeCl₃"],prod:["Fe(OH)₃","NaCl"],cond:"常温",coeff:[3,1,1,3],arrows:["↓",""]},
+    {title:"石灰水与氯化铁反应",react:["Ca(OH)₂","FeCl₃"],prod:["Fe(OH)₃","CaCl₂"],cond:"常温",coeff:[3,2,2,3],arrows:["↓",""]},
+    {title:"烧碱与硫酸铁反应",react:["NaOH","Fe₂(SO₄)₃"],prod:["Fe(OH)₃","Na₂SO₄"],cond:"常温",coeff:[6,1,2,3],arrows:["↓",""]},
+    {title:"石灰水与硫酸铁反应",react:["Ca(OH)₂","Fe₂(SO₄)₃"],prod:["Fe(OH)₃","CaSO₄"],cond:"常温",coeff:[3,1,2,3],arrows:["↓",""]},
+    {title:"纯碱与氯化钙反应",react:["Na₂CO₃","CaCl₂"],prod:["CaCO₃","NaCl"],cond:"常温",coeff:[1,1,1,2],arrows:["↓",""]},
+    {title:"碳酸钾与氯化钙反应",react:["K₂CO₃","CaCl₂"],prod:["CaCO₃","KCl"],cond:"常温",coeff:[1,1,1,2],arrows:["↓",""]},
+    {title:"一氧化碳炼铁（氧化铁）",react:["CO","Fe₂O₃"],prod:["Fe","CO₂"],cond:"高温",coeff:[3,1,2,3],arrows:["",""]},
+    {title:"湿法炼铜（铁和硫酸铜）",react:["Fe","CuSO₄"],prod:["Cu","FeSO₄"],cond:"常温",coeff:[1,1,1,1],arrows:["",""]},
+    {title:"除去空气中氧气，通过灼热铜网",react:["Cu","O₂"],prod:["CuO"],cond:"△",coeff:[2,1,2],arrows:[""]},
+    {title:"实验室制取二氧化碳（碳酸钙与稀盐酸）",react:["CaCO₃","HCl"],prod:["CaCl₂","H₂O","CO₂"],cond:"常温",coeff:[1,2,1,1,1],arrows:["","","↑"]},
+    {title:"电解水",react:["H₂O"],prod:["H₂","O₂"],cond:"通电",coeff:[2,2,1],arrows:["↑","↑"]},
+    {title:"镁和稀盐酸（金属与酸）",react:["Mg","HCl"],prod:["MgCl₂","H₂"],cond:"常温",coeff:[1,2,1,1],arrows:["","↑"]},
+    {title:"氧化铜和稀盐酸（金属氧化物与酸）",react:["CuO","HCl"],prod:["CuCl₂","H₂O"],cond:"常温",coeff:[1,2,1,1],arrows:["",""]}
+];
+const allMatterPool = ["Fe","O₂","H₂O₂","CaO","Zn","HCl","H₂SO₄","HNO₃","Na₂CO₃","NaOH","KOH","Ca(OH)₂","CO₂","CO",
+"Fe₃O₄","H₂O","ZnSO₄","H₂","NaCl","CaCO₃","FeCl₃","FeCl₂","KMnO₄","K₂MnO₄","MnO₂",
+"Fe₂(SO₄)₃","FeSO₄","Na₂SO₄","CuSO₄","Cu(OH)₂","Fe(OH)₃","CaSO₄","CaCl₂","KCl","K₂CO₃","CuO","Cu",
+"Mg","Al","Ag","MgCl₂","CaO","CuCl₂"];
+//金属单质列表，晋级模式遇到这些就取同类金属做干扰
+const metalSimpleList = ["Mg","Fe","Cu","Zn","Al","Ag"];
+//强制配对干扰：key正确化学式，value必须出现的干扰项【新增三组：硫酸铜↔硫酸钙、氯化铜↔氯化钙、氢氧化铜↔氢氧化钙】
+const specialPairMap = {
+    "FeCl₃":["FeCl₂"],
+    "Fe₂(SO₄)₃":["FeSO₄"],
+    "CO₂":["CO"],
+    "CO":["CO₂"],
+    "CuO":["CaO"],
+    "CaO":["CuO"],
+    "CuSO₄":["CaSO₄"],
+    "CaSO₄":["CuSO₄"],
+    "CuCl₂":["CaCl₂"],
+    "CaCl₂":["CuCl₂"],
+    "Cu(OH)₂":["Ca(OH)₂"],
+    "Ca(OH)₂":["Cu(OH)₂"]
+};
+//同类物质分组字典
+const similarGroupMap = {
+    "HCl":["H₂SO₄","HNO₃"],
+    "H₂SO₄":["HCl","HNO₃"],
+    "HNO₃":["HCl","H₂SO₄"],
+    "NaOH":["KOH","Ca(OH)₂"],
+    "KOH":["NaOH","Ca(OH)₂"],
+    "Ca(OH)₂":["NaOH","KOH"],
+    "Na₂CO₃":["K₂CO₃","CaCO₃"],
+    "K₂CO₃":["Na₂CO₃","CaCO₃"],
+    "CaCO₃":["Na₂CO₃","K₂CO₃"],
+    "CuSO₄":["ZnSO₄","FeSO₄"],
+    "ZnSO₄":["CuSO₄","FeSO₄"],
+    "FeSO₄":["CuSO₄","ZnSO₄"]
+};
+let mode = "practice";
+let remainQ = [];
+let currentQ = null;
+let qIdx = 0;
+let totalScore = 0;
+let startTime = 0;
+let step1Sel = {react:[],prod:[],cond:""};
+let step2Data = {coeff:[],showCoeff:[],arrows:[]};
+let step2Unlock = false;
+function getStorage(key){return JSON.parse(localStorage.getItem(key)||"[]");}
+function saveStorage(key,data){localStorage.setItem(key,JSON.stringify(data));}
+//冲分模式解锁标记读写
+function isUnlockAdvancePlus(){
+    return localStorage.getItem("unlockAdvancePlus") === "true";
+}
+function setUnlockAdvancePlus(){
+    localStorage.setItem("unlockAdvancePlus","true");
+}
+function renderHomeAdvPlusBtn(){
+    const btn = document.getElementById("btnAdvancePlus");
+    if(isUnlockAdvancePlus()){
+        btn.classList.remove("hidden");
+    }else{
+        btn.classList.add("hidden");
+    }
+}
+function backToHome(){
+    document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden"));
+    document.getElementById("homePage").classList.remove("hidden");
+    renderHomeAdvPlusBtn();
+}
+function openPage(id){
+    document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+    //打开排行榜页面就加载云端数据
+    if(id === "rankPage"){
+        loadRemoteRank();
+    }
+}
+function setStep1ButtonsEnabled(enable){
+    document.getElementById("btnReact").disabled = !enable;
+    document.getElementById("btnProd").disabled = !enable;
+    document.getElementById("btnCond").disabled = !enable;
+}
+function shuffleArr(arr){
+    let a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+}
+//结构变形干扰（原逻辑）
+function genSimilarDisturb(formulaStr){
+    const elementReplace = {"Fe":"Cu","Cu":"Fe","Na":"K","K":"Na","Ca":"Mg","Mg":"Ca","C":"N","N":"C","S":"P","P":"S","Cl":"Br","Br":"Cl","O":"S","H":"Li"};
+    const groupReplace = {"SO₄":"CO₃","CO₃":"NO₃","NO₃":"OH","OH":"Cl"};
+    let disturbs = [];
+    disturbs.push(formulaStr.replace(/([₂₃₄₅₆₇₈₉])/g,m=>{
+        const map={"₂":"₃","₃":"₂","₄":"₂","₅":"₃"};
+        return map[m]||m;
+    }));
+    for(let src in elementReplace){
+        if(formulaStr.includes(src)){
+            disturbs.push(formulaStr.replace(src,elementReplace[src]));
+            break;
+        }
+    }
+    let hit=0;
+    for(let src in elementReplace){
+        if(formulaStr.includes(src)){
+            if(hit===1){
+                disturbs.push(formulaStr.replace(src,elementReplace[src]));
+                break;
+            }
+            hit++;
+        }
+    }
+    for(let g in groupReplace){
+        if(formulaStr.includes(g)){
+            disturbs.push(formulaStr.replace(g,groupReplace[g]));
+            break;
+        }
+    }
+    disturbs.push(formulaStr.replace(/[₂₃₄₅₆₇₈₉]/,""));
+    disturbs = [...new Set(disturbs)].filter(x=>x && x!==formulaStr);
+    return disturbs;
+}
+//晋级模式6选项生成
+function genAdvanceOptions(correctItem){
+    //金属单质分支
+    if(metalSimpleList.includes(correctItem)){
+        let metalDisturb = metalSimpleList.filter(m=>m!==correctItem);
+        metalDisturb = shuffleArr(metalDisturb);
+        let opts = [correctItem,...metalDisturb.slice(0,5)];
+        return shuffleArr(opts);
+    }
+    let disturbs = [];
+    //优先加入强制配对干扰
+    if(specialPairMap[correctItem]){
+        disturbs.push(...specialPairMap[correctItem]);
+    }
+    //加入3个变形干扰
+    let deform = genSimilarDisturb(correctItem);
+    disturbs.push(...deform.slice(0,3));
+    //加入最多2个同类物质干扰
+    let groupItems = similarGroupMap[correctItem] || [];
+    disturbs.push(...groupItems.slice(0,2));
+    //去重，排除正确项
+    disturbs = [...new Set(disturbs)].filter(x=>x !== correctItem);
+    //兜底补齐到5个干扰
+    while(disturbs.length <5 && deform.length>0){
+        let d = deform.shift();
+        if(d && d!==correctItem && !disturbs.includes(d)) disturbs.push(d);
+    }
+    let opts = [correctItem,...disturbs.slice(0,5)];
+    return shuffleArr(opts);
+}
+function genMatterOptions(correctItem, currentEqMatters){
+    let opts = [correctItem];
+    let candidates = allMatterPool.filter(x=> !currentEqMatters.includes(x));
+    candidates = shuffleArr(candidates);
+    opts.push(candidates[0]);
+    opts.push(candidates[1]);
+    return shuffleArr(opts);
+}
+function genThreeOpt(correct,pool){
+    let opts = [correct];
+    while(opts.length<3){
+        let r = pool[Math.floor(Math.random()*pool.length)];
+        if(!opts.includes(r)) opts.push(r);
+    }
+    return shuffleArr(opts);
+}
+function startPractice(){
+    let name = document.getElementById("stuName").value.trim();
+    if(!name){alert("请输入考生姓名");return;}
+    mode="practice";
+    remainQ = shuffleArr([...questionBank]);
+    totalScore=0; qIdx=0;
+    nextQuestion();
+}
+function startExam(){
+    let name = document.getElementById("stuName").value.trim();
+    if(!name){alert("请输入考生姓名");return;}
+    mode="exam";
+    remainQ = shuffleArr([...questionBank]).slice(0,10);
+    totalScore=0; qIdx=0;
+    startTime = Date.now();
+    nextQuestion();
+}
+//晋级模式：固定10题
+function startAdvance(){
+    let name = document.getElementById("stuName").value.trim();
+    if(!name){alert("请输入考生姓名");return;}
+    mode="advance";
+    remainQ = shuffleArr([...questionBank]).slice(0,10);
+    totalScore=0; qIdx=0;
+    startTime = Date.now();
+    nextQuestion();
+}
+//【新增】晋级冲分模式：全部题库，复用晋级模式干扰逻辑
+function startAdvancePlus(){
+    if(!isUnlockAdvancePlus()) return;
+    let name = document.getElementById("stuName").value.trim();
+    if(!name){alert("请输入考生姓名");return;}
+    mode="advance";
+    remainQ = shuffleArr([...questionBank]);
+    totalScore=0; qIdx=0;
+    startTime = Date.now();
+    nextQuestion();
+}
+function nextQuestion(){
+    if(remainQ.length===0){
+        let useSec = Math.round((Date.now()-startTime)/1000);
+        const userName = document.getElementById("stuName").value.trim();
+        if(mode==="exam"){
+            //提交云端
+            submitRemoteScore("exam",userName,totalScore,useSec);
+            alert(`正式考试结束！总分${totalScore}，用时${useSec}秒`);
+        }else if(mode==="advance"){
+            //晋级模式10题拿到满分解锁冲分模式
+            const isTenQuestionAdv = (qIdx===10);
+            if(isTenQuestionAdv && totalScore===100){
+                setUnlockAdvancePlus();
+                alert(`🎉晋级模式满分！已解锁【晋级冲分模式】\n总分${totalScore}，用时${useSec}秒`);
+            }else{
+                alert(`晋级模式全部完成！总分${totalScore}，用时${useSec}秒`);
+            }
+            submitRemoteScore("advance",userName,totalScore,useSec);
+        }else{
+            alert("模拟练习全部完成");
+        }
+        backToHome();
+        return;
+    }
+    currentQ = remainQ.shift();
+    qIdx++;
+    resetThisQuestion();
+    openPage("quizPage");
+    document.getElementById("qIndex").innerText = `${qIdx}`;
+    document.getElementById("qTitle").innerText = currentQ.title;
+    document.getElementById("score").innerText = totalScore;
+    document.getElementById("selStep1").innerText="";
+    document.getElementById("resultTip").innerText="";
+    document.getElementById("formulaView").innerHTML="";
+    document.getElementById("arrowPanel").innerHTML="";
+}
+function resetThisQuestion(){
+    step1Sel={react:[],prod:[],cond:""};
+    const totalItem = currentQ.react.length + currentQ.prod.length;
+    step2Data={coeff:Array(totalItem).fill(1),showCoeff:Array(totalItem).fill(false),arrows:Array(currentQ.prod.length).fill("")};
+    step2Unlock = false;
+    document.getElementById("selStep1").innerText="";
+    document.getElementById("optPanel").innerHTML="";
+    document.getElementById("formulaView").innerHTML="";
+    document.getElementById("arrowPanel").innerHTML="";
+    document.getElementById("step1Tip").innerText="";
+    document.getElementById("resetBtn").style.display="none";
+    setStep1ButtonsEnabled(true);
+}
+function renderFormula(){
+    let html="";
+    for(let i=0;i<step1Sel.react.length;i++){
+        let item = step1Sel.react[i];
+        let showNum = step2Data.showCoeff[i] ? step2Data.coeff[i] : "";
+        let cls = step2Unlock ? "formula-item" : "formula-item disabled";
+        html += `<span class="${cls}" onclick="${step2Unlock?`clickFormula(${i})`:""}">${showNum}${item}</span>`;
+        if(i !== step1Sel.react.length -1) html += " + ";
+    }
+    let condText = step1Sel.cond === "常温" ? "" : step1Sel.cond;
+    html += `<span class="eq-container"><span class="eq-cond">${condText}</span><span class="eq-equal"></span><span class="eq-equal2"></span></span>`;
+    let prodStartIdx = step1Sel.react.length;
+    for(let i=0;i<step1Sel.prod.length;i++){
+        let item = step1Sel.prod[i];
+        let globalIdx = prodStartIdx + i;
+        let showNum = step2Data.showCoeff[globalIdx] ? step2Data.coeff[globalIdx] : "";
+        let cls = step2Unlock ? "formula-item" : "formula-item disabled";
+        let arrowMark = step2Data.arrows[i] ? `<span class="prod-arrow">${step2Data.arrows[i]}</span>` : "";
+        html += `<span class="${cls}" onclick="${step2Unlock?`clickFormula(${globalIdx})`:""}">${showNum}${item}</span>${arrowMark}`;
+        if(i !== step1Sel.prod.length -1) html += " + ";
+    }
+    document.getElementById("formulaView").innerHTML = html;
+}
+let optType = "";
+const poolCond = ["点燃","△","常温","高温","MnO₂作催化剂","通电"];
+function showOpt(type){
+    optType = type;
+    let panel = document.getElementById("optPanel");
+    panel.innerHTML="";
+    let correct;
+    let opts;
+    if(type==="react"){
+        correct = currentQ.react[step1Sel.react.length];
+        if(mode==="advance"){
+            opts = genAdvanceOptions(correct);
+        }else{
+            const allEqMat = [...currentQ.react, ...currentQ.prod];
+            opts = genMatterOptions(correct, allEqMat);
+        }
+    }else if(type==="prod"){
+        correct = currentQ.prod[step1Sel.prod.length];
+        if(mode==="advance"){
+            opts = genAdvanceOptions(correct);
+        }else{
+            const allEqMat = [...currentQ.react, ...currentQ.prod];
+            opts = genMatterOptions(correct, allEqMat);
+        }
+    }else if(type==="cond"){
+        correct = currentQ.cond;
+        opts=genThreeOpt(correct,poolCond);
+    }
+    opts.forEach(o=>{
+        panel.innerHTML += `<span class="option" onclick="selectOpt('${o}')">${o}</span>`
+    });
+    setStep1ButtonsEnabled(false);
+}
+function selectOpt(val){
+    if(optType==="react") step1Sel.react.push(val);
+    else if(optType==="prod") step1Sel.prod.push(val);
+    else if(optType==="cond") step1Sel.cond = val;
+    document.getElementById("selStep1").innerText = `反应物：${step1Sel.react.join(",")}｜生成物：${step1Sel.prod.join(",")}｜条件：${step1Sel.cond}`;
+    document.getElementById("optPanel").innerHTML="";
+    renderFormula();
+    setStep1ButtonsEnabled(true);
+}
+function checkStep1(){
+    const rightReact = [...currentQ.react].sort();
+    const selReact = [...step1Sel.react].sort();
+    const rightProd = [...currentQ.prod].sort();
+    const selProd = [...step1Sel.prod].sort();
+    if(JSON.stringify(selReact)!==JSON.stringify(rightReact) || JSON.stringify(selProd)!==JSON.stringify(rightProd) || step1Sel.cond !== currentQ.cond){
+        document.getElementById("step1Tip").innerText = "出错了，请修改或者重答";
+        document.getElementById("resetBtn").style.display="inline-block";
+        return;
+    }
+    step2Unlock = true;
+    document.getElementById("step1Tip").innerText = "";
+    document.getElementById("resetBtn").style.display="none";
+    renderFormula();
+    alert("正确了，选系数和箭头");
+}
+let clickItemIndex=null;
+function clickFormula(idx){
+    clickItemIndex=idx;
+    let panel = document.getElementById("arrowPanel");
+    panel.innerHTML="";
+    let coeffPool = [1,2,3];
+    let correctCoeff = currentQ.coeff[idx];
+    let coeffOpt = genThreeOpt(correctCoeff.toString(),coeffPool.map(x=>x.toString()));
+    panel.innerHTML += "<div>选择系数：";
+    coeffOpt.forEach(v=>panel.innerHTML += `<span class="option" onclick="setCoeff('${v}')">${v}</span>`);
+    panel.innerHTML+="</div>";
+    let prodStart = step1Sel.react.length;
+    if(idx >= prodStart){
+        let arrowOpt = genThreeOpt(""||"↑"||"↓",["↑","↓",""]);
+        panel.innerHTML += "<div>选择箭头：";
+        arrowOpt.forEach(v=>{
+            let showText = v === "" ? "无箭头" : v;
+            panel.innerHTML += `<span class="option" onclick="setArrow('${v}')">${showText}</span>`;
+        })
+        panel.innerHTML+="</div>";
+    }
+}
+function setCoeff(v){
+    const num = Number(v);
+    step2Data.coeff[clickItemIndex]=num;
+    step2Data.showCoeff[clickItemIndex] = true;
+    renderFormula();
+}
+function setArrow(v){
+    let pIdx = clickItemIndex - step1Sel.react.length;
+    step2Data.arrows[pIdx]=v;
+    renderFormula();
+}
+function submitAnswer(){
+    let ok=true;
+    if(JSON.stringify(step1Sel.react.sort())!==JSON.stringify([...currentQ.react].sort())) ok=false;
+    if(JSON.stringify(step1Sel.prod.sort())!==JSON.stringify([...currentQ.prod].sort())) ok=false;
+    if(step1Sel.cond!==currentQ.cond) ok=false;
+    for(let i=0;i<currentQ.coeff.length;i++){
+        if(step2Data.coeff[i]!==currentQ.coeff[i]) ok=false;
+    }
+    for(let i=0;i<currentQ.arrows.length;i++){
+        if(step2Data.arrows[i]!==currentQ.arrows[i]) ok=false;
+    }
+    let tip = document.getElementById("resultTip");
+    if(ok){
+        tip.innerText="✅回答正确";
+        if(mode==="exam" || mode==="advance") totalScore +=10;
+    }else{
+        tip.innerText="❌答案错误，已加入错题本";
+        let errList = getStorage("error");
+        errList.push({q:currentQ.title,ans:currentQ});
+        saveStorage("error",errList);
+    }
+    setTimeout(nextQuestion,1800);
+}
+function openError(){
+    openPage("errorPage");
+    let err = getStorage("error");
+    let html="";
+    err.forEach((e,i)=>{
+        const q = e.ans;
+        let condText = q.cond==="常温"?"":q.cond;
+        let rStr = q.react.map((it,idx)=>{let c=q.coeff[idx];return (c===1?"":c)+it;}).join(" + ");
+        let pArr = [];
+        for(let i=0;i<q.prod.length;i++){
+            let c = q.coeff[q.react.length+i];
+            let arrow = q.arrows[i]||"";
+            pArr.push((c===1?"":c)+q.prod[i]+arrow);
+        }
+        let pStr = pArr.join(" + ");
+        html +=`<div style="margin-bottom:16px;padding:8px;border:1px solid #ddd;"><div>${i+1}. ${e.q}</div><div>正确方程式：${rStr} ${condText} ═ ${pStr}</div></div>`;
+    });
+    document.getElementById("errorList").innerHTML=html||"暂无错题";
+}
+document.querySelector('[onclick="openPage(\'errorPage\')"]').addEventListener("click",openError);
+function clearError(){localStorage.removeItem("error");openError();}
+document.querySelector('[onclick="openPage(\'rankPage\')"]').addEventListener("click",openRank);
+//兼容旧绑定，直接调用openPage
+function openRank(){openPage("rankPage");}
+backToHome();
+</script>
+</body></html>
+<!-- （注：内容由AI生成） -->
